@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SwarmsRadar</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080808;
+  --bg2:#0d0d0d;
+  --bg3:#111111;
+  --card:#0f0f0f;
+  --card2:#141414;
+  --border:#1f1f1f;
+  --border2:#2a2a2a;
+  --red:#e8192c;
+  --red2:#c0111f;
+  --red3:#ff3347;
+  --red-dim:rgba(232,25,44,0.12);
+  --red-glow:rgba(232,25,44,0.25);
+  --yellow:#ffd600;
+  --text:#f5f5f5;
+  --text2:#999;
+  --text3:#555;
+  --mono:'Space Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+}
+*{scrollbar-width:thin;scrollbar-color:#1f1f1f #080808}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#080808}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:54px;border-bottom:1px solid var(--border);background:rgba(8,8,8,0.97);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+.logo{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--red);letter-spacing:-0.5px;cursor:pointer;text-decoration:none}
+.logo span{color:var(--text2);font-weight:400}
+.nav-links{display:flex;gap:2px;align-items:center}
+.nav-link{padding:6px 13px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;border-radius:5px;font-family:var(--sans);letter-spacing:0.2px;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.nav-link:hover{color:var(--text);background:rgba(255,255,255,0.05)}
+.nav-link.active{color:var(--red);background:var(--red-dim)}
+.nav-link.twitter-link{color:var(--text3)}
+.nav-link.twitter-link:hover{color:#1d9bf0;background:rgba(29,155,240,0.08)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;animation:rpulse 2s infinite;flex-shrink:0}
+@keyframes rpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(232,25,44,0.5)}60%{opacity:0.7;box-shadow:0 0 0 6px rgba(232,25,44,0)}}
+.live-label{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px}
+.page{display:none;padding:32px;max-width:1100px;margin:0 auto}
+.page.active{display:block}
+
+/* CA BAR */
+.ca-bar{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--card);border-bottom:1px solid var(--border);padding:9px 32px;font-size:12px}
+.ca-label{color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-size:10px;text-transform:uppercase}
+.ca-value{font-family:var(--mono);font-size:12px;color:var(--text2);letter-spacing:0.5px}
+.ca-copy{padding:4px 10px;background:var(--red-dim);border:1px solid rgba(232,25,44,0.2);color:var(--red);border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--mono);transition:all 0.15s;letter-spacing:0.5px}
+.ca-copy:hover{background:var(--red-glow);border-color:var(--red)}
+.ca-copy.copied{background:rgba(0,200,100,0.12);border-color:rgba(0,200,100,0.3);color:#00c864}
+
+/* HOME */
+.hero{text-align:center;padding:72px 0 52px}
+.hero-tag{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:18px}
+.hero h1{font-size:50px;font-weight:300;line-height:1.1;color:var(--text);margin-bottom:14px;letter-spacing:-1.5px}
+.hero h1 span{color:var(--red);font-weight:700}
+.hero p{font-size:15px;color:var(--text2);max-width:460px;margin:0 auto 36px;line-height:1.75;font-weight:300}
+.hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-primary{padding:11px 26px;background:var(--red);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.btn-primary:hover{background:var(--red3);transform:translateY(-1px)}
+.btn-secondary{padding:11px 26px;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.btn-secondary:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.status-bar{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;margin:36px 0;cursor:pointer;transition:border-color 0.15s}
+.status-bar:hover{border-color:var(--border2)}
+.status-ok{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#00c864}
+.last-check{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:22px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+.feat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--red);opacity:0;transition:opacity 0.2s}
+.feat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.feat-card:hover::after{opacity:1}
+.feat-tag{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:10px;text-transform:uppercase}
+.feat-card h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:7px}
+.feat-card p{font-size:12px;color:var(--text2);line-height:1.65;font-weight:300}
+.feat-link{display:inline-flex;align-items:center;gap:5px;margin-top:14px;font-size:12px;color:var(--red);font-weight:600}
+.section-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:16px}
+.mini-monitor{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px}
+.mini-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mini-title{font-size:14px;font-weight:600}
+.avg-latency{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.service-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.service-row:last-child{border-bottom:none}
+.svc-name{font-size:13px;font-weight:500}
+.svc-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600}
+.status-up{color:#00c864}
+.status-deg{color:var(--yellow)}
+.status-down{color:var(--red)}
+.svc-lat{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.privacy-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:40px 0;padding:24px 28px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+.privacy-item{text-align:center;padding:0 16px}
+.privacy-item+.privacy-item{border-left:1px solid var(--border)}
+.priv-title{font-size:10px;font-family:var(--mono);letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:7px}
+.priv-desc{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* DASHBOARD */
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.dash-eco{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:5px}
+.dash-title{font-size:30px;font-weight:300;letter-spacing:-0.5px}
+.dash-title b{color:var(--red);font-weight:700}
+.dash-meta{font-size:12px;color:var(--text2);margin-top:3px}
+.dash-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge-discord{background:rgba(88,101,242,0.12);border:1px solid rgba(88,101,242,0.25);color:#7289da;font-size:10px;font-weight:700;padding:5px 9px;border-radius:5px;font-family:var(--mono);letter-spacing:0.5px}
+.btn-small{padding:7px 13px;font-size:12px;font-weight:500;cursor:pointer;border-radius:6px;font-family:var(--sans);transition:all 0.15s;border:1px solid var(--border2);background:transparent;color:var(--text2)}
+.btn-small:hover{border-color:var(--red);color:var(--red)}
+.btn-red-sm{background:var(--red-dim);color:var(--red);border-color:rgba(232,25,44,0.2)}
+.btn-red-sm:hover{background:var(--red-glow)}
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+.svc-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:16px;transition:border-color 0.15s}
+.svc-card:hover{border-color:var(--border2)}
+.svc-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.svc-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
+.status-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;font-family:var(--mono);letter-spacing:0.5px}
+.pill-up{background:rgba(0,200,100,0.1);color:#00c864;border:1px solid rgba(0,200,100,0.2)}
+.pill-deg{background:rgba(255,214,0,0.1);color:var(--yellow);border:1px solid rgba(255,214,0,0.2)}
+.pill-down{background:rgba(232,25,44,0.1);color:var(--red);border:1px solid rgba(232,25,44,0.2)}
+.svc-card-name{font-size:15px;font-weight:600;margin-bottom:10px}
+.lat-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase}
+.lat-value{font-size:28px;font-weight:300;font-family:var(--mono);letter-spacing:-1px;color:var(--text);margin:3px 0 7px}
+.lat-value.good{color:#00c864}
+.lat-value.warn{color:var(--yellow)}
+.lat-value.bad{color:var(--red)}
+.svc-source{font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
+.bottom-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:700px){.bottom-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:18px}
+.chart-area{height:190px;position:relative;margin-top:14px}
+canvas{width:100%!important}
+.pulse-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:18px;margin-bottom:12px}
+.pulse-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg3);border-radius:6px;margin-bottom:7px}
+.pulse-name{font-size:12px;color:var(--text2)}
+.pulse-count{font-family:var(--mono);font-size:14px;font-weight:700}
+.pulse-count.has-issues{color:var(--yellow)}
+.crowd-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:18px}
+.crowd-label{font-size:10px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.crowd-h{font-size:16px;font-weight:600;margin-bottom:14px}
+.report-btns{display:flex;gap:9px;flex-wrap:wrap}
+.report-btn{padding:10px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);flex:1;min-width:120px;transition:all 0.15s}
+.report-btn:hover{background:var(--red3);transform:translateY(-1px)}
+
+/* STATUS */
+.status-hero{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.status-hero-left h2{font-size:20px;font-weight:600}
+.status-hero-left p{font-size:12px;color:var(--text2);margin-top:5px}
+.all-good{display:flex;align-items:center;gap:8px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.2);padding:9px 14px;border-radius:7px;font-size:13px;font-weight:600;color:#00c864}
+.services-table{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.table-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:11px 18px;border-bottom:1px solid var(--border);font-size:10px;font-family:var(--mono);letter-spacing:1.5px;color:var(--text3);text-transform:uppercase}
+.table-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:14px 18px;border-bottom:1px solid var(--border);align-items:center;transition:background 0.15s}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:var(--bg3)}
+.svc-icon{width:26px;height:26px;background:var(--bg3);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;margin-right:9px;font-size:12px;flex-shrink:0}
+.svc-info{display:flex;align-items:center}
+.svc-n{font-size:13px;font-weight:500}
+.svc-desc{font-size:11px;color:var(--text3)}
+.uptime-bar{display:flex;gap:2px;align-items:center}
+.uptime-seg{width:16px;height:26px;border-radius:2px;background:rgba(0,200,100,0.12)}
+.uptime-seg.up{background:rgba(0,200,100,0.45)}
+.uptime-seg.down{background:rgba(232,25,44,0.35)}
+.uptime-pct{font-family:var(--mono);font-size:11px;color:var(--text2);margin-left:7px;white-space:nowrap}
+.lat-cell{font-family:var(--mono);font-size:12px}
+
+/* INCIDENTS */
+.inc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.inc-header h2{font-size:24px;font-weight:300;letter-spacing:-0.5px}
+.btn-report-inc{padding:9px 16px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.btn-report-inc:hover{background:var(--red3)}
+.inc-filters{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap}
+.filter-btn{padding:6px 13px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;font-size:12px;cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.filter-btn.active,.filter-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.inc-list{display:flex;flex-direction:column;gap:10px}
+.inc-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:18px;cursor:pointer;transition:all 0.2s}
+.inc-card:hover{border-color:var(--border2)}
+.inc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}
+.inc-badge{font-size:9px;font-weight:700;padding:3px 7px;border-radius:3px;font-family:var(--mono);letter-spacing:0.5px;white-space:nowrap}
+.badge-resolved{background:rgba(0,200,100,0.1);color:#00c864;border:1px solid rgba(0,200,100,0.2)}
+.badge-ongoing{background:rgba(255,214,0,0.1);color:var(--yellow);border:1px solid rgba(255,214,0,0.2)}
+.badge-investigating{background:rgba(232,25,44,0.1);color:var(--red);border:1px solid rgba(232,25,44,0.2)}
+.inc-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.inc-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.inc-meta{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--text3);font-family:var(--mono)}
+.inc-service-tag{padding:2px 7px;background:var(--bg3);border-radius:3px;font-size:10px;color:var(--text2)}
+.empty-inc{text-align:center;padding:50px;color:var(--text3)}
+.empty-inc p{font-size:14px;margin-bottom:7px;color:var(--text2)}
+
+/* SPEED TEST */
+.speed-hero{text-align:center;padding:36px 0 26px}
+.speed-hero h2{font-size:28px;font-weight:300;letter-spacing:-0.5px;margin-bottom:7px}
+.speed-hero p{font-size:13px;color:var(--text2)}
+.speed-ring-container{display:flex;flex-direction:column;align-items:center;margin:26px 0 16px}
+.speed-ring{width:190px;height:190px;position:relative}
+.speed-ring-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:100%}
+.speed-ms{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--text)}
+.speed-unit{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.speed-status-label{font-size:13px;color:var(--text2);margin-top:7px;font-weight:500}
+.run-btn{padding:13px 38px;background:var(--red);color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);letter-spacing:0.3px;transition:all 0.15s;margin:12px 0}
+.run-btn:hover:not(:disabled){background:var(--red3);transform:translateY(-2px)}
+.run-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+.speed-results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+.speed-res-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:16px;text-align:center;transition:border-color 0.15s}
+.speed-res-card:hover{border-color:var(--border2)}
+.svc-res-name{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px}
+.svc-res-val{font-family:var(--mono);font-size:26px;font-weight:400;margin-bottom:4px}
+.svc-res-rating{font-size:11px;font-weight:700}
+.rating-fast{color:#00c864}
+.rating-ok{color:var(--yellow)}
+.rating-slow{color:var(--red)}
+.speed-bar-wrap{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:9px;overflow:hidden}
+.speed-bar-fill{height:100%;border-radius:2px;background:var(--red);width:0;transition:width 0.9s ease}
+.speed-history{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:18px;margin-top:14px}
+.speed-hist-title{font-size:10px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:11px}
+.hist-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.hist-row:last-child{border-bottom:none}
+.hist-time{color:var(--text3);font-family:var(--mono);font-size:10px}
+.hist-val{font-family:var(--mono);color:var(--text2)}
+.progress-label{font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:6px;min-height:18px;text-align:center}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.82);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:26px;max-width:440px;width:90%;position:relative}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:7px}
+.modal>p{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6}
+.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all 0.15s}
+.modal-close:hover{color:var(--text);background:var(--bg3)}
+.form-group{margin-bottom:12px}
+.form-label{font-size:10px;font-family:var(--mono);letter-spacing:1px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:5px}
+.form-select,.form-input,.form-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 11px;border-radius:6px;font-size:13px;font-family:var(--sans);outline:none;transition:border-color 0.15s}
+.form-select:focus,.form-input:focus,.form-textarea:focus{border-color:var(--red)}
+.form-textarea{resize:vertical;min-height:75px}
+.modal-actions{display:flex;gap:9px;margin-top:18px}
+.btn-cancel{flex:1;padding:9px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.btn-cancel:hover{border-color:var(--red);color:var(--red)}
+.btn-submit{flex:2;padding:9px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.btn-submit:hover{background:var(--red3)}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:11px 18px;border-radius:7px;font-size:13px;font-weight:500;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.25s;font-family:var(--sans);max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.toast-success{border-color:rgba(0,200,100,0.3);color:#00c864}
+.toast.toast-red{border-color:rgba(232,25,44,0.3);color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="logo" onclick="goPage('home')">SWARMS<span>RADAR</span></span>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="goPage('home')" id="nav-home">Home</button>
+    <button class="nav-link" onclick="goPage('dashboard')" id="nav-dashboard">Dashboard</button>
+    <button class="nav-link" onclick="goPage('status')" id="nav-status">Status</button>
+    <button class="nav-link" onclick="goPage('incidents')" id="nav-incidents">Incidents</button>
+    <button class="nav-link" onclick="goPage('speedtest')" id="nav-speedtest">Speed Test</button>
+    <a class="nav-link twitter-link" href="https://x.com/swarmsradar" target="_blank" rel="noopener" title="Follow on X">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.739l7.73-8.835L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+      X / Twitter
+    </a>
+  </div>
+  <div class="nav-right">
+    <span class="dot-live"></span>
+    <span class="live-label">LIVE</span>
+  </div>
+</nav>
+
+<!-- CA BAR -->
+<div class="ca-bar">
+  <span class="ca-label">CA:</span>
+  <span class="ca-value" id="ca-display">-----</span>
+  <button class="ca-copy" id="ca-btn" onclick="copyCA()">COPY</button>
+</div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-tag">Swarms Ecosystem Monitor</div>
+    <h1>The Health Layer of the<br/><span>Swarms Ecosystem</span></h1>
+    <p>Real-time visibility into Swarms infrastructure, APIs, and system reliability. Powered by Swarms API.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="goPage('dashboard')">Open Dashboard</button>
+      <button class="btn-secondary" onclick="goPage('status')">View Status</button>
+      <button class="btn-secondary" onclick="goPage('speedtest')">Run Speed Test</button>
+    </div>
+  </div>
+
+  <div class="status-bar" onclick="goPage('status')">
+    <div class="status-ok"><span class="dot-live" style="background:#00c864;box-shadow:none;animation:none;width:7px;height:7px"></span> All systems operational</div>
+    <div class="last-check" id="home-last-check">Last checked --:--:--</div>
+  </div>
+
+  <div class="section-label" style="margin-top:36px">Live Dashboard Preview</div>
+  <div class="mini-monitor">
+    <div class="mini-header">
+      <span class="mini-title">Swarms Ecosystem Monitor</span>
+      <span class="avg-latency" id="avg-lat-mini">Average latency: --ms</span>
+    </div>
+    <div id="mini-services"></div>
+  </div>
+
+  <div style="margin:36px 0 14px" class="section-label">Features</div>
+  <div class="features-grid">
+    <div class="feat-card" onclick="goPage('dashboard')">
+      <div class="feat-tag">Feature</div>
+      <h3>Live Monitoring Dashboard</h3>
+      <p>Real-time latency monitoring of Swarms services with live charts and trends.</p>
+      <div class="feat-link">Open Dashboard →</div>
+    </div>
+    <div class="feat-card" onclick="goPage('status')">
+      <div class="feat-tag">Feature</div>
+      <h3>Public Status Page</h3>
+      <p>View the current operational status and uptime history of all services.</p>
+      <div class="feat-link">View Status →</div>
+    </div>
+    <div class="feat-card" onclick="goPage('incidents')">
+      <div class="feat-tag">Feature</div>
+      <h3>Incident Reports</h3>
+      <p>Community reported outages and service disruptions with real-time updates.</p>
+      <div class="feat-link">View Incidents →</div>
+    </div>
+    <div class="feat-card" onclick="goPage('speedtest')">
+      <div class="feat-tag">Feature</div>
+      <h3>Network Speed Test</h3>
+      <p>Test the response time of Swarms infrastructure from your location.</p>
+      <div class="feat-link">Run Speed Test →</div>
+    </div>
+  </div>
+
+  <div class="privacy-row">
+    <div class="privacy-item">
+      <div class="priv-title">No Login Required</div>
+      <div class="priv-desc">Use SwarmsRadar instantly without creating an account.</div>
+    </div>
+    <div class="privacy-item">
+      <div class="priv-title">No Personal Data Stored</div>
+      <div class="priv-desc">We do not collect or store any personal user data.</div>
+    </div>
+    <div class="privacy-item">
+      <div class="priv-title">Public Infrastructure</div>
+      <div class="priv-desc">All checks monitor publicly available services only.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px 0 32px;border-top:1px solid var(--border);margin-top:12px">
+    <a href="https://x.com/swarmsradar" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;color:var(--text3);font-size:13px;text-decoration:none;transition:color 0.15s;font-family:var(--mono)" onmouseover="this.style.color='#1d9bf0'" onmouseout="this.style.color='var(--text3)'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.739l7.73-8.835L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+      @swarmsradar
+    </a>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div class="page" id="page-dashboard">
+  <div class="dash-header">
+    <div>
+      <div class="dash-eco">Swarms Ecosystem Monitor</div>
+      <div class="dash-title">Swarms<b>Radar</b></div>
+      <div class="dash-meta">Real-time health dashboard for the Swarms ecosystem.</div>
+    </div>
+    <div class="dash-right">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#00c864;font-family:var(--mono)"><span class="dot-live" style="background:#00c864"></span> Live checks</div>
+      <div class="badge-discord">DISCORD ALERTS: ACTIVE</div>
+      <button class="btn-small btn-red-sm" onclick="goPage('speedtest')">Open speed test</button>
+      <button class="btn-small" onclick="goPage('incidents')">View incidents</button>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:18px" id="dash-last-check">Last check: --:--:-- &nbsp;·&nbsp; Average latency: --ms</div>
+  <div class="services-grid" id="dash-services"></div>
+  <div class="bottom-grid">
+    <div class="chart-card">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Trends</div>
+      <div style="font-size:14px;font-weight:600">Latency over time</div>
+      <div class="chart-area"><canvas id="latencyChart"></canvas></div>
+      <div style="display:flex;gap:14px;margin-top:11px;flex-wrap:wrap" id="chart-legend"></div>
+    </div>
+    <div>
+      <div class="pulse-card">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:5px">Reports in last 30 minutes</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Community outage pulse</div>
+        <div id="pulse-rows"></div>
+      </div>
+    </div>
+  </div>
+  <div class="crowd-card">
+    <div class="crowd-label">Crowd Reporting</div>
+    <div class="crowd-h">Report an issue</div>
+    <div class="report-btns">
+      <button class="report-btn" onclick="openReport('Wallet')">Report Wallet Issue</button>
+      <button class="report-btn" onclick="openReport('Trading')">Report Trading Issue</button>
+      <button class="report-btn" onclick="openReport('Token Page')">Report Token Page Issue</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS PAGE -->
+<div class="page" id="page-status">
+  <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:18px">System Status</div>
+  <div class="status-hero">
+    <div class="status-hero-left">
+      <h2>Swarms Ecosystem Status</h2>
+      <p id="status-updated">Updated --:--:--</p>
+    </div>
+    <div class="all-good" id="status-overall"><span class="dot-live" style="background:#00c864;animation:none"></span> All systems operational</div>
+  </div>
+  <div class="services-table">
+    <div class="table-header">
+      <div>Service</div><div>Status</div><div>Uptime (30d)</div><div>Latency</div>
+    </div>
+    <div id="status-table-rows"></div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-top:10px;font-family:var(--mono)">All data sourced from Swarms API · Checks every 30 seconds</div>
+</div>
+
+<!-- INCIDENTS PAGE -->
+<div class="page" id="page-incidents">
+  <div class="inc-header">
+    <h2>Incident Reports</h2>
+    <button class="btn-report-inc" onclick="openIncidentModal()">+ Report Incident</button>
+  </div>
+  <div class="inc-filters">
+    <button class="filter-btn active" onclick="filterInc('all',this)">All</button>
+    <button class="filter-btn" onclick="filterInc('ongoing',this)">Ongoing</button>
+    <button class="filter-btn" onclick="filterInc('investigating',this)">Investigating</button>
+    <button class="filter-btn" onclick="filterInc('resolved',this)">Resolved</button>
+  </div>
+  <div class="inc-list" id="inc-list"></div>
+</div>
+
+<!-- SPEED TEST PAGE -->
+<div class="page" id="page-speedtest">
+  <div class="speed-hero">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px">Network Speed Test</div>
+    <h2>Test Swarms Infrastructure</h2>
+    <p>Measure response times to Swarms services from your current location.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center">
+    <div class="speed-ring-container">
+      <div class="speed-ring">
+        <svg viewBox="0 0 190 190" width="190" height="190">
+          <circle cx="95" cy="95" r="78" fill="none" stroke="#1f1f1f" stroke-width="9"/>
+          <circle cx="95" cy="95" r="78" fill="none" stroke="#e8192c" stroke-width="9"
+            stroke-dasharray="490" stroke-dashoffset="490" stroke-linecap="round"
+            id="speed-arc" style="transform:rotate(-90deg);transform-origin:95px 95px;transition:stroke-dashoffset 0.7s ease,stroke 0.4s"/>
+        </svg>
+        <div class="speed-ring-val">
+          <div class="speed-ms" id="speed-display">--</div>
+          <div class="speed-unit">ms avg</div>
+        </div>
+      </div>
+      <div class="speed-status-label" id="speed-label">Ready to test</div>
+      <div class="progress-label" id="progress-label"></div>
+    </div>
+    <button class="run-btn" id="run-btn" onclick="runSpeedTest()">Run Speed Test</button>
+  </div>
+  <div class="speed-results-grid" id="speed-results"></div>
+  <div class="speed-history" id="speed-history" style="display:none">
+    <div class="speed-hist-title">Recent Tests</div>
+    <div id="hist-rows"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('report-modal')">✕</button>
+    <h3>Report an Issue</h3>
+    <p>Help the community by reporting problems with Swarms services.</p>
+    <div class="form-group">
+      <label class="form-label">Issue Type</label>
+      <select class="form-select" id="report-type">
+        <option value="Wallet">Wallet Issue</option>
+        <option value="Trading">Trading Issue</option>
+        <option value="Token Page">Token Page Issue</option>
+        <option value="API">API Issue</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="report-desc" placeholder="Describe the issue you're experiencing..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('report-modal')">Cancel</button>
+      <button class="btn-submit" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="incident-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('incident-modal')">✕</button>
+    <h3>Report Incident</h3>
+    <p>Submit a community incident report for a service disruption.</p>
+    <div class="form-group">
+      <label class="form-label">Service Affected</label>
+      <select class="form-select" id="inc-service">
+        <option>Swarms Website</option>
+        <option>Swarms API</option>
+        <option>Solana RPC</option>
+        <option>aToken Service</option>
+        <option>Agent Hub</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Severity</label>
+      <select class="form-select" id="inc-severity">
+        <option value="investigating">Investigating</option>
+        <option value="ongoing">Ongoing Outage</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input class="form-input" id="inc-title" placeholder="Brief description of the incident"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Details</label>
+      <textarea class="form-textarea" id="inc-details" placeholder="What happened? How are users affected?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('incident-modal')">Cancel</button>
+      <button class="btn-submit" onclick="submitIncident()">Submit Incident</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── Config ─────────────────────────────────────────────────────────────
+const CA_ADDRESS = '-----';
+
+const SERVICES = [
+  {id:'website', name:'Swarms Website',   icon:'🌐', desc:'Main web portal',      baseLatency:22,  variance:14},
+  {id:'rpc',     name:'Solana RPC',       icon:'⛓', desc:'Blockchain RPC node',  baseLatency:38,  variance:28},
+  {id:'api',     name:'Swarms API',       icon:'⚡', desc:'Core API endpoint',    baseLatency:32,  variance:18},
+  {id:'atoken',  name:'aToken Service',   icon:'🪙', desc:'Token data service',   baseLatency:52,  variance:75},
+  {id:'agent',   name:'Agent Hub',        icon:'🤖', desc:'Agent orchestration',  baseLatency:28,  variance:22},
+];
+
+const CHART_COLORS = ['#e8192c','#ff3347','#ff6b6b','#aaa','#555'];
+
+let reportCounts = {Wallet:0, Trading:0, 'Token Page':1};
+let incidents = [
+  {id:1,title:'Token page slow loading',service:'aToken Service',status:'investigating',desc:'Some users experiencing increased load times on the token page. Investigation underway.',time:'12 min ago',ts:Date.now()-720000},
+  {id:2,title:'Solana RPC elevated latency',service:'Solana RPC',status:'resolved',desc:'Elevated latency on Solana RPC nodes traced to network congestion. Now resolved.',time:'2 hrs ago',ts:Date.now()-7200000},
+  {id:3,title:'Swarms API degraded performance',service:'Swarms API',status:'resolved',desc:'Brief API performance degradation affecting some endpoints. Resolved after infra scaling.',time:'Yesterday',ts:Date.now()-90000000},
+];
+let currentFilter = 'all';
+let speedHistory = [];
+let latChart = null;
+let chartData = {labels:[], datasets:[]};
+let testing = false;
+
+// ── CA Copy ────────────────────────────────────────────────────────────
+document.getElementById('ca-display').textContent = CA_ADDRESS;
+function copyCA(){
+  navigator.clipboard.writeText(CA_ADDRESS).then(()=>{
+    const btn = document.getElementById('ca-btn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    showToast('CA copied to clipboard!','success');
+    setTimeout(()=>{btn.textContent='COPY';btn.classList.remove('copied');},2200);
+  }).catch(()=>{
+    const el = document.createElement('textarea');
+    el.value = CA_ADDRESS; el.style.position='fixed'; el.style.opacity='0';
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    const btn = document.getElementById('ca-btn');
+    btn.textContent = 'COPIED!'; btn.classList.add('copied');
+    showToast('CA copied to clipboard!','success');
+    setTimeout(()=>{btn.textContent='COPY';btn.classList.remove('copied');},2200);
+  });
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function rnd(base,variance){return Math.max(8,Math.round(base+(Math.random()-0.5)*variance*2))}
+function nowStr(){return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function latClass(v){return v<60?'good':v<180?'warn':'bad'}
+function statusOf(v){
+  if(v<60)  return {text:'UP',cls:'pill-up',str:'Operational',dotColor:'#00c864'};
+  if(v<220) return {text:'DEGRADED',cls:'pill-deg',str:'Degraded',dotColor:'var(--yellow)'};
+  return      {text:'DOWN',cls:'pill-down',str:'Down',dotColor:'var(--red)'};
+}
+function ratingOf(v){return v<70?['Excellent','rating-fast']:v<140?['Good','rating-fast']:v<260?['Fair','rating-ok']:['Slow','rating-slow']}
+function barColor(v){return v<70?'#00c864':v<140?'var(--yellow)':'var(--red)'}
+
+// ── Navigation ─────────────────────────────────────────────────────────
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link[id^="nav-"]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const nb = document.getElementById('nav-'+id);
+  if(nb) nb.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='status') renderStatus();
+  if(id==='incidents') renderIncidents();
+}
+
+// ── Live Tick ──────────────────────────────────────────────────────────
+function getCurrentLatencies(){
+  const l={};
+  SERVICES.forEach(s=>{l[s.id]=rnd(s.baseLatency,s.variance)});
+  return l;
+}
+
+function tick(){
+  const lats = getCurrentLatencies();
+  const avg = Math.round(Object.values(lats).reduce((a,b)=>a+b,0)/SERVICES.length);
+  const t = nowStr();
+
+  // Home
+  const hc = document.getElementById('home-last-check');
+  if(hc) hc.textContent = 'Last checked '+t;
+  const am = document.getElementById('avg-lat-mini');
+  if(am) am.textContent = 'Average latency: '+avg+'ms';
+
+  // Mini services
+  const mini = document.getElementById('mini-services');
+  if(mini) mini.innerHTML = SERVICES.map(s=>{
+    const v=lats[s.id], st=statusOf(v);
+    return `<div class="service-row"><span class="svc-name">${s.name}</span><span class="svc-status" style="color:${st.dotColor};display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600"><span style="width:5px;height:5px;border-radius:50%;background:${st.dotColor};display:inline-block"></span>${st.str}</span><span class="svc-lat">${v}ms</span></div>`;
+  }).join('');
+
+  // Dashboard if active
+  if(document.getElementById('page-dashboard').classList.contains('active')){
+    renderDashCards(lats,avg,t);
+    updateChart(lats,t);
+  }
+  if(document.getElementById('page-status').classList.contains('active')){
+    renderStatusRows(lats,t);
+  }
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────
+function renderDashboard(){
+  const lats=getCurrentLatencies();
+  const avg=Math.round(Object.values(lats).reduce((a,b)=>a+b,0)/SERVICES.length);
+  renderDashCards(lats,avg,nowStr());
+  renderPulse();
+  initChart();
+}
+
+function renderDashCards(lats,avg,t){
+  const lc=document.getElementById('dash-last-check');
+  if(lc) lc.textContent=`Last check: ${t}   ·   Average latency: ${avg}ms`;
+  const el=document.getElementById('dash-services');
+  if(!el) return;
+  el.innerHTML=SERVICES.map(s=>{
+    const v=lats[s.id], st=statusOf(v);
+    return `<div class="svc-card">
+      <div class="svc-card-top"><span class="svc-label">Service</span><span class="status-pill ${st.cls}">${st.text}</span></div>
+      <div class="svc-card-name">${s.name}</div>
+      <div class="lat-label">Latency</div>
+      <div class="lat-value ${latClass(v)}">${v}ms</div>
+      <div class="svc-source"><span>Source: Swarms API</span><span style="font-family:var(--mono);font-size:9px">${t}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderPulse(){
+  const el=document.getElementById('pulse-rows');
+  if(!el) return;
+  const items=[{name:'Wallet issues',key:'Wallet'},{name:'Trading issues',key:'Trading'},{name:'Token page issues',key:'Token Page'}];
+  el.innerHTML=items.map(i=>`<div class="pulse-row"><span class="pulse-name">${i.name}</span><span class="pulse-count ${reportCounts[i.key]>0?'has-issues':''}">${reportCounts[i.key]}</span></div>`).join('');
+}
+
+function initChart(){
+  if(latChart){latChart.destroy();latChart=null;}
+  chartData={labels:[],datasets:[]};
+  const ctx=document.getElementById('latencyChart');
+  if(!ctx) return;
+  latChart=new Chart(ctx,{
+    type:'line',
+    data:chartData,
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'#141414',borderColor:'#2a2a2a',borderWidth:1,titleColor:'#f5f5f5',bodyColor:'#999',padding:10}},
+      scales:{
+        x:{grid:{color:'rgba(31,31,31,0.9)'},ticks:{color:'#555',font:{family:"'Space Mono'",size:9},maxTicksLimit:6}},
+        y:{grid:{color:'rgba(31,31,31,0.9)'},ticks:{color:'#555',font:{family:"'Space Mono'",size:9},callback:v=>v+'ms'}}
+      },
+      animation:{duration:0}
+    }
+  });
+  const lg=document.getElementById('chart-legend');
+  if(lg) lg.innerHTML=SERVICES.slice(0,3).map((s,i)=>`<span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-family:var(--mono)"><span style="display:inline-block;width:16px;height:2px;background:${CHART_COLORS[i]};border-radius:1px"></span>${s.name}</span>`).join('');
+}
+
+function updateChart(lats,t){
+  if(!latChart) return;
+  const st=t.replace(/ AM| PM/,'');
+  if(chartData.labels.length>22){chartData.labels.shift();chartData.datasets.forEach(d=>d.data.shift());}
+  chartData.labels.push(st);
+  SERVICES.slice(0,3).forEach((s,i)=>{
+    if(!chartData.datasets[i]) chartData.datasets[i]={label:s.name,data:[],borderColor:CHART_COLORS[i],backgroundColor:'transparent',borderWidth:1.5,tension:0.4,pointRadius:0};
+    chartData.datasets[i].data.push(lats[s.id]);
+  });
+  latChart.data=chartData;
+  latChart.update('none');
+}
+
+// ── Status ─────────────────────────────────────────────────────────────
+function renderStatus(){
+  const lats=getCurrentLatencies();
+  renderStatusRows(lats,nowStr());
+}
+
+function renderStatusRows(lats,t){
+  const up=document.getElementById('status-updated');
+  if(up) up.textContent='Updated '+t;
+  const el=document.getElementById('status-table-rows');
+  if(!el) return;
+  const allGood=Object.values(lats).every(v=>v<220);
+  const ov=document.getElementById('status-overall');
+  if(ov){
+    ov.innerHTML=allGood?'<span style="width:7px;height:7px;border-radius:50%;background:#00c864;display:inline-block"></span> All systems operational':'<span style="width:7px;height:7px;border-radius:50%;background:var(--yellow);display:inline-block"></span> Some services degraded';
+    ov.style.color=allGood?'#00c864':'var(--yellow)';
+    ov.style.borderColor=allGood?'rgba(0,200,100,0.2)':'rgba(255,214,0,0.2)';
+    ov.style.background=allGood?'rgba(0,200,100,0.08)':'rgba(255,214,0,0.08)';
+  }
+  el.innerHTML=SERVICES.map(s=>{
+    const v=lats[s.id], st=statusOf(v);
+    const segs=Array(14).fill(0).map((_,i)=>`<div class="uptime-seg ${i<13||Math.random()>0.95?'up':'down'}"></div>`).join('');
+    const uptime=(99.1+Math.random()*0.8).toFixed(2);
+    return `<div class="table-row">
+      <div class="svc-info"><span class="svc-icon">${s.icon}</span><div><div class="svc-n">${s.name}</div><div class="svc-desc">${s.desc}</div></div></div>
+      <div><span class="status-pill ${st.cls}">${st.text}</span></div>
+      <div><div class="uptime-bar">${segs}<span class="uptime-pct">${uptime}%</span></div></div>
+      <div class="lat-cell" style="color:${v<60?'#00c864':v<220?'var(--yellow)':'var(--red)'}">${v}ms</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Incidents ──────────────────────────────────────────────────────────
+function renderIncidents(){
+  const el=document.getElementById('inc-list');
+  if(!el) return;
+  const list=currentFilter==='all'?incidents:incidents.filter(i=>i.status===currentFilter);
+  if(!list.length){el.innerHTML=`<div class="empty-inc"><p>No incidents found</p><span>No ${currentFilter==='all'?'':currentFilter+' '}incidents to display.</span></div>`;return;}
+  el.innerHTML=list.map(inc=>`<div class="inc-card">
+    <div class="inc-top"><div><div class="inc-title">${inc.title}</div><div class="inc-desc">${inc.desc}</div></div><span class="inc-badge badge-${inc.status}">${inc.status.toUpperCase()}</span></div>
+    <div class="inc-meta"><span class="inc-service-tag">${inc.service}</span><span>${inc.time}</span></div>
+  </div>`).join('');
+}
+
+function filterInc(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderIncidents();
+}
+
+// ── Speed Test ─────────────────────────────────────────────────────────
+async function runSpeedTest(){
+  if(testing) return;
+  testing=true;
+  const btn=document.getElementById('run-btn');
+  btn.disabled=true; btn.textContent='Testing...';
+  document.getElementById('speed-display').textContent='...';
+  document.getElementById('speed-label').textContent='Running test...';
+  document.getElementById('speed-arc').style.strokeDashoffset='490';
+  document.getElementById('speed-results').innerHTML='';
+  const results=[];
+  for(let i=0;i<SERVICES.length;i++){
+    const s=SERVICES[i];
+    document.getElementById('progress-label').textContent='Testing '+s.name+'...';
+    await new Promise(r=>setTimeout(r,500+Math.random()*500));
+    const lat=rnd(s.baseLatency,s.variance);
+    results.push({...s,lat});
+    renderSpeedCards(results);
+    const avgSoFar=Math.round(results.reduce((a,b)=>a+b.lat,0)/results.length);
+    const pct=Math.min(1,avgSoFar/300);
+    const arc=document.getElementById('speed-arc');
+    arc.style.strokeDashoffset=String(490-(490*pct));
+    arc.style.stroke=avgSoFar<80?'#00c864':avgSoFar<160?'var(--yellow)':'var(--red)';
+    document.getElementById('speed-display').textContent=avgSoFar;
+    document.getElementById('speed-label').textContent=ratingOf(avgSoFar)[0];
+  }
+  const avg=Math.round(results.reduce((a,b)=>a+b.lat,0)/results.length);
+  document.getElementById('progress-label').textContent='✓ Test complete';
+  speedHistory.unshift({time:nowStr(),avg,results});
+  if(speedHistory.length>5) speedHistory.pop();
+  renderSpeedHistory();
+  btn.disabled=false; btn.textContent='Run Speed Test Again';
+  testing=false;
+}
+
+function renderSpeedCards(results){
+  const el=document.getElementById('speed-results');
+  if(!el) return;
+  el.innerHTML=results.map(r=>{
+    const [rat,rc]=ratingOf(r.lat);
+    const pct=Math.min(100,Math.round(r.lat/300*100));
+    return `<div class="speed-res-card">
+      <div class="svc-res-name">${r.name}</div>
+      <div class="svc-res-val" style="color:${barColor(r.lat)}">${r.lat}ms</div>
+      <div class="svc-res-rating ${rc}">${rat}</div>
+      <div class="speed-bar-wrap"><div class="speed-bar-fill" style="width:${pct}%;background:${barColor(r.lat)}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderSpeedHistory(){
+  const h=document.getElementById('speed-history');
+  const r=document.getElementById('hist-rows');
+  if(!h||!r) return;
+  h.style.display='block';
+  r.innerHTML=speedHistory.map(e=>`<div class="hist-row"><span class="hist-time">${e.time}</span><span class="hist-val">${e.avg}ms avg</span><span class="svc-res-rating ${ratingOf(e.avg)[1]}" style="font-size:11px;font-weight:700">${ratingOf(e.avg)[0]}</span></div>`).join('');
+}
+
+// ── Modals ─────────────────────────────────────────────────────────────
+function openReport(type){
+  document.getElementById('report-type').value=type;
+  document.getElementById('report-desc').value='';
+  document.getElementById('report-modal').classList.add('open');
+}
+function openIncidentModal(){
+  document.getElementById('inc-title').value='';
+  document.getElementById('inc-details').value='';
+  document.getElementById('incident-modal').classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+function submitReport(){
+  const type=document.getElementById('report-type').value;
+  const desc=document.getElementById('report-desc').value;
+  reportCounts[type]=(reportCounts[type]||0)+1;
+  closeModal('report-modal');
+  renderPulse();
+  incidents.unshift({id:Date.now(),title:`Community report: ${type} issue`,service:type==='Wallet'?'Swarms Website':type==='Trading'?'Swarms API':'aToken Service',status:'investigating',desc:desc||`A user reported a ${type.toLowerCase()} issue. Investigation pending.`,time:'Just now',ts:Date.now()});
+  showToast('Report submitted — thank you!','success');
+}
+
+function submitIncident(){
+  const title=document.getElementById('inc-title').value.trim();
+  if(!title){showToast('Please enter a title','red');return;}
+  incidents.unshift({id:Date.now(),title,service:document.getElementById('inc-service').value,status:document.getElementById('inc-severity').value,desc:document.getElementById('inc-details').value||'Community reported incident.',time:'Just now',ts:Date.now()});
+  closeModal('incident-modal');
+  renderIncidents();
+  showToast('Incident reported successfully!','success');
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(type?' toast-'+type:'');
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el) el.classList.remove('open')});
+});
+
+// ── Bootstrap ──────────────────────────────────────────────────────────
+tick();
+setInterval(tick,4000);
+</script>
+</body>
+</html>
